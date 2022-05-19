@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from pattern_prediction_test import *
+from pattern_prediction import *
 from regions import *
 from extra_functions import *
 
@@ -499,12 +499,6 @@ class Predictor:
             dists, nns = neighbor_finder.kneighbors(init_chunks_full)
         print('Making predictions...', end='\r')
         nns = np.array(train_chunks_without_nan_test.index)[nns]
-
-        # Drop integer time index and additional feature again MUST BE CHANGED TO PREDICT ADDITIONAL FEATURE
-        # if time_sensitive:
-        #     cols = [i for i in range(points_to_predict, train_chunks.shape[1])]
-        #     train_chunks.drop(columns=cols, inplace=True)
-        #     init_chunks.drop(columns=cols, inplace=True)
 
         # Construct prediction by concatenating subsequent chunks and nearest neighbors
         pred_ind = range(1, chunks_to_predict + 1)

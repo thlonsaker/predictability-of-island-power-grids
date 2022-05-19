@@ -7,7 +7,7 @@ import datetime
 import glob
 from pandas.tseries.offsets import DateOffset
 import matplotlib.pyplot as plt
-from pattern_prediction_test import construct_chunks
+from pattern_prediction import construct_chunks
 
 
 def new_period_info(sample, week, month, file, test_file=None):

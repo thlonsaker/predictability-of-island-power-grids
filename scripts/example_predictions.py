@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from pattern_prediction_test import *
+from pattern_prediction import *
 from predictor import Predictor
 from regions import *
 from extra_functions import space
@@ -229,7 +229,7 @@ class ExamplePrediction(Predictor):
                 ensemble_pred_std = data['ensemble_pred_std']
                 ensemble_pred = data['ensemble_pred']
                 axs[i, j].fill_between(self.one_pred_index, ensemble_pred + ensemble_pred_std,
-                                       ensemble_pred - ensemble_pred_std, alpha=0.2,
+                                       ensemble_pred - ensemble_pred_std, alpha=0.35,
                                        facecolor=self.base.one_pred, label='Prediction error')
                 axs[i, j].plot(self.one_pred_index, ensemble_test, lw=0.9, label='Test series', c=self.base.test_series)
                 axs[i, j].plot(self.one_pred_index, daily_profile_pred, lw=1, label='Daily profile', c=self.base.daily_profile)

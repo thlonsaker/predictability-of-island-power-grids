@@ -161,5 +161,5 @@ class FaroeIslands(Regions):
     test_end = '2019-11-10 08:59:59'
     time_sensitive = False
     samples = 1
-    periods = []
+    periods = list()
     color = '#c9ddf0'

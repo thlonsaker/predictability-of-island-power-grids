@@ -48,11 +48,8 @@ class Performance(Predictor):
         plt.show()
 
     def plot_rmse_relative_Ireland(self, region=Ireland(), feature='all', k='adaptive', specific_weight=1,
-                                   start=0, end=60, best=False, scale=False, savefig=False):
+                                   start=0, end=60, best=False, savefig=False):
         region.set_additional_features(feature)
-        s = 'not_scaled'
-        if scale:
-            s = 'scaled'
         if k != 'adaptive' and k != 'fixed':
             return f'ERROR: --{k}-- not a type of k.'
         null_file = self.result_path_root + f'eval_prediction/{region}/' + self.out_file.format(0, 3600, 1)
@@ -63,7 +60,7 @@ class Performance(Predictor):
         else:
             return
         for feature in region.additional_features:
-            file = self.result_path_root + f'eval_prediction/{region}/2_dim/{feature}/{s}/' + \
+            file = self.result_path_root + f'eval_prediction/{region}/2_dim/{feature}/' + \
                    self.out_file.format(0, 3600, specific_weight)
             data = np.load(file)
             pred = data[f'pred_error_{k}_k'][60 * start:60 * end]
@@ -131,35 +128,7 @@ class Performance(Predictor):
             plt.savefig(f'plots/{region}_relative.pdf')
         plt.show()
 
-    def plot_rmse_all_weights(self, region, feature='', scaled=True, start=0, end=60):
-        s = 'not_scaled'
-        if scaled:
-            s = 'scaled'
-        files = glob.glob(self.result_path_root + f'eval_prediction/{region}/2_dim/{feature}/{s}/' + '*.npz')
-        files = np.sort(files)
-        best_rmse = 1000
-        best_weight = 0
-        for i, file in enumerate(files):
-            data = np.load(file)
-            pred_f = data['pred_error_fixed_k'][60 * start:60 * end]
-            label = file[128 + len(region) + len(feature) + len(s):-4]
-            plt.plot(self.one_pred_index[60 * start:60 * end], pred_f, label=f'fixed-k WNN {label}', lw=0.5)
-            rmse_sum = pred_f.sum()
-            if rmse_sum < best_rmse:
-                best_rmse = rmse_sum
-                best_weight = label
-        plt.xticks([int(i) for i in range(start, end + 1, (end - start) // 4)])
-        plt.grid(axis='x')
-        plt.title(f'RMSE for {region} \n New feature: {space(feature)}', fontsize=14)
-        print(f'Best weight: {best_weight} with rmse {best_rmse}')
-        plt.xlabel('Time $\Delta t$ [min]', fontsize=14)
-        plt.ylabel('RMSE$(\hat f)$ [Hz]', fontsize=14)
-        # axs[1,0].set_ylabel(r'RMSE$(f_p)$ / RMSE$(f_d)$', fontsize=14)
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-
-    def performance(self, regions, periods=None, test=False):
+    def performance(self, regions, periods=None):
         self.set_regions(regions)
         self.set_periods(periods)
         for region in self.areas:
@@ -200,17 +169,10 @@ class Performance(Predictor):
                             train_chunks, init_chunks, ensemble_test, dp_s, dp_e = data_tuple
                             if self.size_dependent:
                                 in_path = self.result_path_root + f'optimization/{reg_name}/{period}/'
-                                if test:
-                                    knn_npz = np.load(in_path + 'average_k.npz')
-                                else:
-                                    knn_npz = np.load(in_path + self.k_opt_archive.format(pred_start_minute, points_per_chunk, sample))
+                                knn_npz = np.load(in_path + self.k_opt_archive.format(pred_start_minute, points_per_chunk, sample))
                             else:
-                                if test:
-                                    knn_npz = np.load(self.result_path_root + f'optimization/{reg_name}/2_dim/adaptive_k_weight.npz')
-                                else:
-                                    knn_npz = np.load(self.result_path_root + f'optimization/{reg_name}/' + self.k_opt_archive.format(0,
-                                                                                                                                      3600,
-                                                                                                                                      1))
+                                knn_npz = np.load(self.result_path_root + f'optimization/{reg_name}/' +
+                                                  self.k_opt_archive.format(0, 3600, 1))
                             k_opt = knn_npz['k_opt']
                             k_opt_fixed = int(knn_npz['k_opt_fixed'])
                             daily_profile_pred = daily_profile_prediction(data_path, init_chunks, self.points_to_predict, dp_s, dp_e)
@@ -226,13 +188,7 @@ class Performance(Predictor):
                             daily_profile_error = calc_rmse(daily_profile_pred.T, ensemble_test.T)
                             pred_error_adaptive_k = calc_rmse(ensemble_pred_a.T, ensemble_test.T)
                             pred_error_fixed_k = calc_rmse(ensemble_pred_f.T, ensemble_test.T)
-                            if test:
-                                np.savez(self.result_path_root + f'eval_prediction/{reg_name}/test/{period}' +
-                                         self.out_file.format(pred_start_minute, points_per_chunk, sample),
-                                         fiftyHz_error=fiftyhz_error, daily_profile_error=daily_profile_error,
-                                         pred_error_adaptive_k=pred_error_adaptive_k)
-
-                            elif self.size_dependent:
+                            if self.size_dependent:
                                 np.savez(self.result_path_root + f'eval_prediction/{reg_name}/{period}/' +
                                          self.out_file.format(pred_start_minute, points_per_chunk, sample),
                                          fiftyHz_error=fiftyhz_error, daily_profile_error=daily_profile_error,
@@ -250,9 +206,8 @@ class Performance(Predictor):
             print(f'Performance is done for {region.name} for all periods.')
         print('Performance is done.')
 
-    def performance_2dim(self, regions, feature, new_dim_chunk_length, weight=0, scale=False):
+    def performance_2dim(self, regions, feature, new_dim_chunk_length, weight=0):
         self.set_regions(regions)
-        self.scale = scale
         self.new_dim_chunk_length = new_dim_chunk_length
         self.weight = weight
 
@@ -271,9 +226,6 @@ class Performance(Predictor):
             sample_list = np.arange(1, samples + 1)
             if self.weight != 0:
                 weight = self.weight
-            s = 'not_scaled'
-            if self.scale:
-                s = 'scaled'
             for time in times:
                 random.seed(12345)
                 week, month, period = period_filename(time)
@@ -289,17 +241,17 @@ class Performance(Predictor):
                         period_info = new_period_info(sample, week, month, file)
                         print(period_info)
                     self.inner_2dim(main_data, points_per_chunk, start_min, period_info, weight,
-                                    data_path, region.time_sensitive, reg_name, feature, s, sample, period)
+                                    data_path, region.time_sensitive, reg_name, feature, sample, period)
 
         print('Performance is done.')
 
     def inner_2dim(self, main_data, points_per_chunk, start_min, period_info, weight, data_path,
-                   time_sensitive, area_name, feature, s, sample, period):
+                   time_sensitive, area_name, feature, sample, period):
 
         if self.size_dependent:
             knn_npz = np.load(self.result_path_root + f'optimization/{area_name}/2_dim/{feature}/{period}/adaptive_k_weight{sample}.npz')
         else:
-            knn_npz = np.load(self.result_path_root + f'optimization/{area_name}/2_dim/{feature}/{s}/adaptive_k_weight{weight}.npz')
+            knn_npz = np.load(self.result_path_root + f'optimization/{area_name}/2_dim/{feature}/adaptive_k_weight{weight}.npz')
         k_opt = knn_npz['k_opt']
         k_opt_fixed = int(knn_npz['k_opt_fixed'])
         w = self.weight
@@ -325,7 +277,7 @@ class Performance(Predictor):
                      fiftyHz_error=fiftyhz_error, daily_profile_error=daily_profile_error,
                      pred_error_fixed_k=pred_error_fixed_k, pred_error_adaptive_k=pred_error_adaptive_k)
         else:
-            np.savez(self.result_path_root + f'eval_prediction/{area_name}/2_dim/{feature}/{s}/new' +
+            np.savez(self.result_path_root + f'eval_prediction/{area_name}/2_dim/{feature}/new' +
                      self.out_file.format(start_min, points_per_chunk, w),
                      fiftyHz_error=fiftyhz_error, daily_profile_error=daily_profile_error,
                      pred_error_fixed_k=pred_error_fixed_k, pred_error_adaptive_k=pred_error_adaptive_k)

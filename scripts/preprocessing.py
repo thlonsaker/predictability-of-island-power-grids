@@ -28,9 +28,6 @@ class PreProcessing(Predictor):
                 data = pd.read_pickle(region.format_data)
                 data = data.drop(index=idxs)
                 data = data[~data.index.duplicated()]
-                # sec = [0, 1, 2]
-                # mask = ((data.index.second % 60).isin(sec))
-                # data = data[~mask]
                 data.plot.kde(ax=ax[i, j], ind=np.arange(-xrange, xrange, 0.5), logy=True, label='frequency\ndistribution',
                                          c=self.color[region.name], linewidth=3, ylim=(1e-7, 2e-2))
                 ax[-1, j].set_xlabel('f - f$^{ref}$ (mHz)', fontsize=17)

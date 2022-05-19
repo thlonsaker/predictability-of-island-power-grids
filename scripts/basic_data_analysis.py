@@ -9,16 +9,18 @@ class DataAnalysis:
     plt.rc('text', usetex=True)
     out_path = '/Users/thorbjornlundonsaker/workspace/Master/results/time_scales/'
     in_path = '/Users/thorbjornlundonsaker/workspace/Master/cleaned_data/'
-    areas = [[FaroeIslands(), None], [Ireland(), BalearicIslands()], [Iceland(), Nordic()]]
+    areas = [[Nordic(), None], [Ireland(), BalearicIslands()], [Iceland(), FaroeIslands()]]
     color = Standards().patterns
     figsize = (15, 12)
     fontsize = 28
     ticks = 22
     label = 24
 
-    def __init__(self, info):
+    def __init__(self, info=None):
         """info of type: {'area1': (start_time, end_time), 'area2': ...}.
         Values can be of type: (str, str), (int, int), (), int"""
+        if info is None:
+            info = {'Ireland': (), 'Iceland': (), 'Balearic Islands': (), 'Nordic': (), 'Faroe Islands': ()}
         self.info = info
         print('Loading data...', end='\r')
         self.data = []
